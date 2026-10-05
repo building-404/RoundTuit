@@ -1,0 +1,60 @@
+{
+  "name": "mwp-agent",
+  "description": "Universal AI Context Patterns agent. Runs the tick-based .NET API and content pipelines from the shared universal-ai-context-patterns engine; per-project state lives in <workspace>/.universal-mwp/.",
+  "prompt": "{{KIRO_HOME_URI}}/steering/mwp-protocol.md",
+  "tools": [
+    "read",
+    "write",
+    "shell",
+    "grep",
+    "glob",
+    "code",
+    "knowledge",
+    "@atlassian",
+    "@microsoftdocs"
+  ],
+  "allowedTools": [
+    "read",
+    "grep",
+    "glob",
+    "code",
+    "knowledge"
+  ],
+  "toolsSettings": {
+    "shell": {
+      "allowedCommands": [
+        "dotnet build",
+        "dotnet test",
+        "dotnet restore",
+        "git checkout",
+        "git branch",
+        "git commit",
+        "git push",
+        "git diff",
+        "git status"
+      ],
+      "autoAllowReadonly": true
+    }
+  },
+  "resources": [
+    "{{KIRO_HOME_URI}}/steering/mwp-protocol.md",
+    "{{ENGINE_URI}}/IDENTITY.md",
+    "{{ENGINE_URI}}/CONTEXT.md",
+    "{{ENGINE_URI}}/pipelines/**/*.md",
+    "{{ENGINE_URI}}/references/**/*.md",
+    "{{ENGINE_URI}}/prompts/**/*.md",
+    "{{ENGINE_URI}}/conventions/**/*.md",
+    "skill://{{KIRO_HOME_PATH}}/skills/**/SKILL.md"
+  ],
+  "mcpServers": {
+    "microsoftdocs": {
+      "url": "https://learn.microsoft.com/api/mcp"
+    },
+    "atlassian": {
+      "url": "https://mcp.atlassian.com/v1/mcp",
+      "timeout": 60000
+    }
+  },
+  "keyboardShortcut": "ctrl+shift+r",
+  "welcomeMessage": "Universal AI Context Patterns ready. New API, update, or content pipeline? I'll sync from the workspace's .universal-mwp/ and run one tick."
+}

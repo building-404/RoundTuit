@@ -1,0 +1,68 @@
+version: "1.0"
+mode: "local-file-only"
+oneTaskPerTick: true
+
+# Scope-based risk classification (canonical engine default).
+#
+# Each tick classifies a task's change_scope by what it will ACTUALLY do,
+# then matches these rules in order — first match wins. If no rule matches,
+# default_risk applies.
+#
+# This model classifies by EFFECT, not just task type: read-only research is
+# low even when it uses external tools (e.g. gh CLI), but a SELECT against a
+# shared/non-local database is high because it touches a shared system.
+#
+# Adopted from patterns proven in a long-running .NET workspace, which found
+# the earlier flat type/action map needlessly routed read-only work through
+# approvals.
+
+risk_rules:
+  # Read-only investigation: reading files, code review, research, DB SELECTs
+  # against LOCAL data, git status/log/diff, issue-tracker reads. No repo or
+  # external writes.
+  - match: { change_scope: "read-only" }
+    risk: low
+
+  # Creating a brand-new file that no existing code depends on yet
+  # (new .universal-mwp state files, research notes, a new test file).
+  - match: { change_scope: "new-file" }
+    risk: low
+
+  # Editing existing tracked source/config (bug fixes, refactors).
+  # Reversible locally but touches tracked code -> require approval.
+  - match: { change_scope: "modify-existing" }
+    risk: medium
+
+  # Deleting tracked files or dropping data.
+  - match: { change_scope: "delete" }
+    risk: high
+
+  # Anything that leaves the local machine or touches shared systems:
+  # git push, opening/merging PRs, issue-tracker writes, deploys,
+  # queries/writes against shared (develop/QA/prod) databases or live APIs.
+  - match: { change_scope: "external-integration" }
+    risk: high
+
+default_risk: medium
+
+risk_gates:
+  low:
+    auto_execute: true
+  medium:
+    auto_execute: false
+    requires_approval: true
+  high:
+    auto_execute: false
+    requires_approval: true
+    requires_explicit_confirmation: true
+
+# Classification notes (informational; the AI applies these when deciding
+# change_scope above):
+# - Read-only PR reviews and code research are change_scope: read-only (low)
+#   even when they use gh/git tooling, AS LONG AS nothing is posted back.
+# - A live DB SELECT against a shared develop/QA/prod system is
+#   external-integration (high) because it touches a shared system, even
+#   though it only reads.
+# - Local diagnostics that are fully reverted before the tick ends are
+#   read-only in net effect (low), provided no tracked file is left modified
+#   and no secret value is ever read or echoed.

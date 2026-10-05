@@ -1,0 +1,6 @@
+{
+  "$schema": "local-icm/preference-signals@1",
+  "description": "Raw observed user-interaction signals (what happened). Rules in preference-rules.yaml are derived from these. Human-editable; safe to prune.",
+  "seeded": "TEMPLATE",
+  "signals": []
+}

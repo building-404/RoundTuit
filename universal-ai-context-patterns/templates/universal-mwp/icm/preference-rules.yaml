@@ -1,0 +1,62 @@
+version: "1.0"
+# Derived preferences (what to do next time), each with a confidence score in
+# [0.0, 1.0] and the signal IDs that justify it. Rules with confidence >= 0.8
+# may be applied automatically; lower-confidence rules are advisory and should
+# still surface to the user. All rules are human-editable — delete or adjust
+# any rule at any time.
+#
+# These are SEED rules distilled from a long-running .NET workspace. They
+# encode durable, cross-project working preferences. Project-specific rules
+# accrue below them over time as signals are logged (see preference-signals).
+
+rules:
+  - id: rule-no-unrequested-fixes
+    when: { situation: "root cause identified or task is investigation/research only" }
+    prefer: "Do NOT implement a fix unless explicitly requested. Document/research only."
+    confidence: 0.95
+    based_on: ["seed"]
+    notes: >
+      Strongest observed preference. A user rejected an unrequested fix outright,
+      especially after root cause was agreed.
+
+  - id: rule-github-via-gh-cli
+    when: { situation: "researching any GitHub repo/file/code" }
+    prefer: "Use the gh CLI (or a GitHub MCP server). Never web-fetch or raw.githubusercontent.com URLs."
+    confidence: 0.95
+    based_on: ["seed"]
+
+  - id: rule-secrets-transparent-only
+    when: { situation: "task involves secrets, tokens, or connection strings" }
+    prefer: "Let the standard config provider / user-secrets load values transparently. Never patch tracked config with secrets, never list/echo secret values (length-only checks OK)."
+    confidence: 0.9
+    based_on: ["seed"]
+
+  - id: rule-readonly-review-is-low
+    when: { task_type: "code-review OR research", side_effects: "none (nothing written to repo or posted externally)" }
+    prefer: "Classify as low risk and execute directly; do not route through approvals."
+    confidence: 0.85
+    based_on: ["seed"]
+
+  - id: rule-inline-goahead-is-approval
+    when: { situation: "user explicitly names a task and says to work/start it" }
+    prefer: "Treat as inline approval for that task at its classified risk; skip the stop-and-wait approvals cycle. Still record the approval basis in approvals.md / decision-log.md."
+    confidence: 0.8
+    based_on: ["seed"]
+    notes: "Applies to the named task only, not a blanket auto-approve for future tasks."
+
+  - id: rule-shared-db-read-is-high
+    when: { task_type: "db-read", target: "develop/QA/prod (shared, non-local)" }
+    prefer: "Classify as high (external-integration) and get explicit approval before connecting, even for read-only SELECTs."
+    confidence: 0.75
+    based_on: ["seed"]
+
+  - id: rule-complete-when-done
+    when: { situation: "the work for the active task is finished" }
+    prefer: "Mark the task complete and clear active context immediately (per /complete). Do not stop and ask a separate 'should I mark it done?' question."
+    confidence: 0.8
+    based_on: ["seed"]
+    notes: "Encodes the streamlining preference: don't add a confirmation step once work is done."
+
+# No blanket auto-approve rules are seeded. Auto-approval for a given task
+# type at a given risk level should only be derived after repeated, consistent
+# approval signals for that specific pattern.
