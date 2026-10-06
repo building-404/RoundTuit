@@ -10,6 +10,19 @@
 
 This specification defines a universal memory layer for the MWP (Model Workspace Protocol) system, enabling cross-project preference learning while reducing per-project repository footprint.
 
+### Storage Model
+
+| Layer | Format | Retention | Purpose |
+|-------|--------|-----------|---------|
+| Hot | SQLite | Rolling 28 days | Day-to-day rule resolution, signal recording |
+| Cold | Parquet | Indefinite | Historical analytics, pattern discovery |
+| Overrides | YAML | Manual | Project-specific human-editable preferences |
+| Analytics | DuckDB | N/A | Optional unified query layer across hot + cold |
+
+**Archive trigger**: Daily on first use. Any signals or decisions older than 28 days are flushed to the appropriate monthly Parquet file before the tick runs.
+
+**Rule retention**: Rules are permanent until archive runs. At archive time, any rule whose supporting signals have all moved to archive is flagged for review in the next session. The rule remains active while pending — it does not stop auto-applying until the human explicitly changes or disables it.
+
 ---
 
 ## Existing Convention: `~/.ai-context/`
@@ -61,14 +74,15 @@ Universal memory extends the existing `~/.ai-context/` convention by adding a ne
 │   ├── references/
 │   └── templates/
 │
-└── universal-mwp/                     # Universal memory (NEW, read-write)
+└── memory/                            # Universal memory (NEW, read-write)
     ├── icm/
-    │   ├── preferences.db             # SQLite: signals + rules + decisions
+    │   ├── preferences.db             # SQLite: hot window (rolling 28 days)
     │   ├── preferences.db-wal         # SQLite WAL files
     │   ├── preferences.db-shm
-    │   └── embeddings/                # Optional: vector index files
-    │       ├── signals.index
-    │       └── decisions.index
+    │   └── archive/                   # Parquet: monthly cold archives
+    │       ├── 2026-10.parquet
+    │       ├── 2026-09.parquet
+    │       └── ...
     └── templates/
         └── preferences.local.yaml     # Template for project overrides
 ```
@@ -126,7 +140,7 @@ project-b/
 ~/.ai-context/
 ├── universal-ai-context-patterns/     # Engine (unchanged)
 │
-└── universal-mwp/                     # NEW: Universal memory
+└── memory/                            # NEW: Universal memory
     ├── icm/
     │   └── preferences.db             # All signals + rules across ALL projects
     └── templates/
@@ -161,7 +175,7 @@ project-b/
 ### Location
 
 ```
-~/.ai-context/universal-mwp/icm/preferences.db
+~/.ai-context/memory/icm/preferences.db
 ```
 
 ### Tables
@@ -196,6 +210,8 @@ CREATE TABLE rules (
   last_applied_at TEXT,
   is_active BOOLEAN NOT NULL DEFAULT 1,
   human_override TEXT,
+  pending_review BOOLEAN NOT NULL DEFAULT 0,  -- Flagged when source signals archived
+  is_permanent BOOLEAN NOT NULL DEFAULT 0,    -- Never flagged for review again
   
   CHECK (confidence >= 0.0 AND confidence <= 1.0)
 );
@@ -223,7 +239,88 @@ CREATE INDEX idx_decisions_project_task ON decisions(project_path, task_id);
 
 ---
 
-## Rule Resolution Algorithm
+## Archive Process
+
+### Trigger
+
+On first use each day, before any tick runs:
+
+1. Query signals and decisions older than 28 days
+2. Group by month (`strftime('%Y-%m', created_at)`)
+3. For each month group, append to `~/.ai-context/memory/icm/archive/YYYY-MM.parquet`
+4. Delete archived rows from SQLite
+5. Check rules whose all supporting signals are now archived — flag for review
+
+### Rule Review Flagging
+
+After archive runs, any rule where all source signals have moved to archive is marked `pending_review` in the rules table:
+
+```sql
+UPDATE rules
+SET pending_review = 1
+WHERE signal_count > 0
+  AND id NOT IN (
+    SELECT DISTINCT derived_from_signal_id FROM signals
+  );
+```
+
+On the next session start, the agent surfaces pending rules:
+
+```
+1 rule pending review:
+  - auto-approve feature+medium (confidence: 0.85, last applied: 2026-09-28)
+  Keep active? [yes / no / make permanent]
+```
+
+`make permanent` removes the review requirement — the rule never gets flagged again regardless of archive cycles.
+
+### Archive Schema (Parquet)
+
+Each monthly Parquet file contains the same columns as the SQLite `signals` and `decisions` tables, plus a `table` column to distinguish them:
+
+```
+archive/2026-10.parquet
+  columns: table, id, project_path, project_name, task_id, task_type,
+           risk_level, action, confidence, context_json, created_at
+```
+
+---
+
+## DuckDB: Unified Query Layer (Optional)
+
+DuckDB is a recommended optional dependency for analytics queries across hot (SQLite) and cold (Parquet) data. It requires no server — single binary, works on macOS/Linux/Windows.
+
+### Cross-Archive Query Example
+
+```sql
+-- Approval rate across all time (hot + cold)
+SELECT task_type, risk_level,
+  SUM(CASE WHEN action = 'approved' THEN 1 ELSE 0 END) * 100.0 / COUNT(*) AS approval_rate,
+  COUNT(*) AS total
+FROM (
+  SELECT task_type, risk_level, action FROM signals  -- hot (SQLite)
+  UNION ALL
+  SELECT task_type, risk_level, action              -- cold (Parquet)
+  FROM read_parquet('~/.ai-context/memory/icm/archive/*.parquet')
+  WHERE table = 'signals'
+)
+GROUP BY task_type, risk_level
+ORDER BY total DESC;
+```
+
+### Installation
+
+```bash
+# macOS
+brew install duckdb
+
+# Direct download
+curl -L https://github.com/duckdb/duckdb/releases/latest/download/duckdb_cli-osx-universal.zip -o duckdb.zip
+```
+
+DuckDB is **not required** for daily operation. SQLite handles all runtime queries. DuckDB is only needed when querying historical archives.
+
+---
 
 When classifying a new task, rules are resolved in priority order:
 
@@ -300,7 +397,7 @@ project_context:
 │   ├── references/
 │   └── templates/
 │
-└── universal-mwp/                     # Universal memory (read-write)
+└── memory/                            # Universal memory (read-write)
     ├── icm/
     │   ├── preferences.db
     │   └── embeddings/
@@ -343,7 +440,7 @@ project_context:
 
 ### Phase 1: Create Universal Location
 
-1. Create `~/.ai-context/universal-mwp/` directory structure
+1. Create `~/.ai-context/memory/` directory structure
 2. Initialize `preferences.db` with schema
 3. Keep per-project `icm/` intact (dual-write period)
 
@@ -385,9 +482,9 @@ def record_signal(
 ) -> int:
     """
     Record a preference signal from a user decision.
-    Writes to ~/.ai-context/universal-mwp/icm/preferences.db
+    Writes to ~/.ai-context/memory/icm/preferences.db
     """
-    db_path = Path.home() / ".ai-context" / "universal-mwp" / "icm" / "preferences.db"
+    db_path = Path.home() / ".ai-context" / "memory" / "icm" / "preferences.db"
     # ... implementation
 ```
 
@@ -434,7 +531,7 @@ This specification extends the established `~/.ai-context/` convention:
 
 | Existing | New |
 |----------|-----|
-| `~/.ai-context/universal-ai-context-patterns/` (engine) | `~/.ai-context/universal-mwp/` (memory) |
+| `~/.ai-context/universal-ai-context-patterns/` (engine) | `~/.ai-context/memory/` (memory) |
 | Read-only, shared across tools | Read-write, shared across tools |
 | Installed once | Populated over time |
 | Tool-agnostic | Tool-agnostic |
@@ -449,13 +546,18 @@ The universal memory location follows the same principles:
 
 ## Implementation Checklist
 
-- [ ] Create `~/.ai-context/universal-mwp/` structure
-- [ ] Implement SQLite schema
-- [ ] Build migration script from JSON/YAML to SQLite
-- [ ] Update `tick-contract.md` with new resolution logic
-- [ ] Update ICM protocol with DB writes
+See [Universal Memory Implementation Changes](universal-memory-implementation.md) for the exact
+instruction text changes to `tick-contract.md`, `icm-protocol.md`, and `install/INSTALL.md`.
+
+- [ ] Create `~/.ai-context/memory/` structure (install + lazy creation on tick)
+- [ ] Implement SQLite schema (including `pending_review`, `is_permanent`, `meta` table)
+- [ ] Build daily archive process (SQLite → monthly Parquet)
+- [ ] Build rule review flagging logic
+- [ ] Build migration from per-project JSON/YAML to SQLite
+- [ ] Apply instruction changes from `universal-memory-implementation.md` to `tick-contract.md`
+- [ ] Apply instruction changes from `universal-memory-implementation.md` to `icm-protocol.md`
+- [ ] Apply install step from `universal-memory-implementation.md` to `install/INSTALL.md`
 - [ ] Create `preferences.local.yaml` template
-- [ ] Add `sqlite-vec` extension (optional, for vectors)
-- [ ] Update documentation to reference new structure
+- [ ] Document DuckDB as optional analytics dependency
 - [ ] Test migration on existing projects
 - [ ] Remove per-project `icm/` after validation
