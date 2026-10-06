@@ -2,6 +2,11 @@
 
 Canonical execution rules for the Universal AI Context Patterns system.
 
+> **Path convention**: All paths use forward slashes. `MEMORY_HOME` resolves to
+> `HOME/.ai-context/memory` where `HOME` is the user's home directory
+> (macOS/Linux: `$HOME`, Windows: `%USERPROFILE%`). Use `Path.home()` in Python
+> or the equivalent in other languages — never hardcode `~/` on Windows.
+
 ## Execution Model
 
 Each chat invocation is one **deterministic tick**. State persists across sessions via local files.

@@ -4,6 +4,11 @@ Canonical mechanics for how the system learns preferences. All ICM skills
 (`/approve`, `/auto-approve`, `/complete`, and any decision point) reference
 THIS file so the behavior is defined in one place (DRY).
 
+> **Path convention**: `MEMORY_HOME` = `HOME/.ai-context/memory` where `HOME`
+> is the user's home directory (macOS/Linux: `$HOME`, Windows: `%USERPROFILE%`).
+> Use forward slashes on all platforms. Use `Path.home()` in Python or equivalent
+> — never hardcode `~/` on Windows.
+
 State lives in universal memory at `~/.ai-context/memory/icm/preferences.db`:
 - `signals` table — raw observed signals (rolling 28-day hot window)
 - `rules` table — derived + seed rules (with confidence, permanent until reviewed)

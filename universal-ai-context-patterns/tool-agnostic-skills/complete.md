@@ -33,8 +33,8 @@ Read `.universal-mwp/queue/inbox.md`:
 
 Per `protocol/icm-protocol.md`, if completing the task involved a user
 decision worth learning (a correction, standing instruction, or notable
-approval), append a signal to `.universal-mwp/icm/preference-signals.json` and
-update `preference-rules.yaml`/`decision-log.md` as the protocol directs.
+approval), INSERT a signal into `MEMORY_HOME/icm/preferences.db` and
+update the rules/decisions tables as the protocol directs.
 Routine completions with no new user decision do not need a signal.
 
 Note: `rule-complete-when-done` means finished work should be marked complete
@@ -63,4 +63,4 @@ Current task being actively worked on.
 - `.universal-mwp/context/active-context.md`
 - `.universal-mwp/context/progress.md`
 - `.universal-mwp/queue/inbox.md`
-- `.universal-mwp/icm/*` (only if a signal/rule was logged)
+- `MEMORY_HOME/icm/preferences.db` (only if a signal/rule was logged)

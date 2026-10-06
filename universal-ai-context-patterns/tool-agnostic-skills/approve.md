@@ -33,23 +33,22 @@ Move task from "Pending" to "Approved" section:
 
 ## Step 4: Log Signal (ICM)
 
-Follow `protocol/icm-protocol.md`. Append a signal to
-`.universal-mwp/icm/preference-signals.json` (`signals[]`):
+Follow `protocol/icm-protocol.md`. INSERT a signal into
+`MEMORY_HOME/icm/preferences.db` (signals table):
 
-```json
-{
-  "id": "sig-NNN",
-  "date": "YYYY-MM-DD",
-  "task": "{ID}",
-  "observation": "User approved {ID} ({title}).",
-  "signal_type": "approval_granted",
-  "dimensions": { "task_type": "{type}", "risk_assigned": "{level}" }
-}
+```sql
+INSERT INTO signals (project_path, project_name, task_id, task_type,
+  risk_level, action, confidence, context_json)
+VALUES ('<workspace>', '<project>', '{ID}', '{type}', '{level}',
+  'approved', 1.0,
+  '{"observation": "User approved {ID} ({title}).",
+    "signal_type": "approval_granted",
+    "dimensions": {"task_type": "{type}", "risk_assigned": "{level}"}}');
 ```
 
-Then per the protocol, derive/update a rule in `preference-rules.yaml` if this
+Then per the protocol, derive/update a rule in the rules table if this
 signal is a persistent correction/guardrail, or if 3+ consistent signals now
-exist for this pattern. Record the decision in `icm/decision-log.md`.
+exist for this pattern. Record the decision in the decisions table.
 
 ## Step 5: Confirm
 
@@ -60,6 +59,4 @@ Approved: {ID} - {title}
 ## Files Modified
 
 - `.universal-mwp/queue/approvals.md`
-- `.universal-mwp/icm/preference-signals.json`
-- `.universal-mwp/icm/preference-rules.yaml` (only if a rule was derived/updated)
-- `.universal-mwp/icm/decision-log.md`
+- `MEMORY_HOME/icm/preferences.db` (signals + rules + decisions tables)
