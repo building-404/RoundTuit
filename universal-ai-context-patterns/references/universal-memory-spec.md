@@ -551,9 +551,9 @@ instruction text changes to `tick-contract.md`, `icm-protocol.md`, and `install/
 
 - [x] Create `~/.ai-context/memory/` structure (install + lazy creation on tick)
 - [x] Implement SQLite schema (including `pending_review`, `is_permanent`, `meta` table)
-- [ ] Build daily archive process (SQLite → monthly Parquet)
-- [ ] Build rule review flagging logic
-- [ ] Build migration from per-project JSON/YAML to SQLite
+- [x] Build daily archive process (SQLite → monthly Parquet)
+- [x] Build rule review flagging logic
+- [x] Build migration from per-project JSON/YAML to SQLite
 - [x] Apply instruction changes from `universal-memory-implementation.md` to `tick-contract.md`
 - [x] Apply instruction changes from `universal-memory-implementation.md` to `icm-protocol.md`
 - [x] Apply install step from `universal-memory-implementation.md` to `install/INSTALL.md`
