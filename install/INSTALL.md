@@ -50,6 +50,72 @@ at run time, so it is cross-platform.
 
 This engine is now shared by every tool below.
 
+### Step 1b — Initialize universal memory (always)
+
+1. Ensure `~/.ai-context/memory/icm/` exists (create parents as needed)
+2. Ensure `~/.ai-context/memory/icm/archive/` exists
+3. If `~/.ai-context/memory/icm/preferences.db` does not exist, initialize it
+   with the following tables:
+
+   ```sql
+   CREATE TABLE signals (
+     id INTEGER PRIMARY KEY AUTOINCREMENT,
+     project_path TEXT NOT NULL,
+     project_name TEXT,
+     task_id TEXT NOT NULL,
+     task_type TEXT NOT NULL,
+     risk_level TEXT NOT NULL,
+     action TEXT NOT NULL,
+     confidence REAL DEFAULT 1.0,
+     context_json TEXT,
+     created_at TEXT NOT NULL DEFAULT (datetime('now')),
+     UNIQUE(project_path, task_id)
+   );
+   CREATE TABLE rules (
+     id INTEGER PRIMARY KEY AUTOINCREMENT,
+     rule_id TEXT NOT NULL UNIQUE,
+     project_pattern TEXT,
+     condition_json TEXT NOT NULL,
+     action TEXT NOT NULL,
+     confidence REAL NOT NULL,
+     signal_count INTEGER NOT NULL,
+     derived_at TEXT NOT NULL DEFAULT (datetime('now')),
+     last_applied_at TEXT,
+     is_active BOOLEAN NOT NULL DEFAULT 1,
+     human_override TEXT,
+     pending_review BOOLEAN NOT NULL DEFAULT 0,
+     is_permanent BOOLEAN NOT NULL DEFAULT 0,
+     CHECK (confidence >= 0.0 AND confidence <= 1.0)
+   );
+   CREATE TABLE decisions (
+     id INTEGER PRIMARY KEY AUTOINCREMENT,
+     project_path TEXT NOT NULL,
+     task_id TEXT NOT NULL,
+     rule_id TEXT,
+     decision TEXT NOT NULL,
+     reasoning TEXT,
+     created_at TEXT NOT NULL DEFAULT (datetime('now')),
+     FOREIGN KEY (rule_id) REFERENCES rules(rule_id)
+   );
+   CREATE TABLE meta (
+     key TEXT PRIMARY KEY,
+     value TEXT NOT NULL
+   );
+   INSERT OR IGNORE INTO meta (key, value) VALUES ('last_archive_at', NULL);
+   INSERT OR IGNORE INTO meta (key, value) VALUES ('schema_version', '1');
+   CREATE INDEX idx_signals_project ON signals(project_path);
+   CREATE INDEX idx_signals_type_risk ON signals(task_type, risk_level);
+   CREATE INDEX idx_rules_project_pattern ON rules(project_pattern);
+   CREATE INDEX idx_rules_active ON rules(is_active);
+   CREATE INDEX idx_decisions_project_task ON decisions(project_path, task_id);
+   ```
+
+4. If `~/.ai-context/memory/templates/` does not exist, create it and copy
+   `ENGINE_HOME/templates/preferences.local.yaml` into it (if the template exists)
+
+This initializes universal memory. It is safe to re-run — existing data is not
+overwritten.
+
 ### Engine contents (what Step 1 copies)
 
 - `IDENTITY.md`, `CONTEXT.md`, `README.md`
