@@ -1,0 +1,41 @@
+name: Mirror Master to GitHub
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  push-to-github:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Filter .gitea and Push master branch
+        env:
+          # Explicitly map Gitea secrets to environment variables
+          GH_USER: ${{ secrets.GH_USER }}
+          GH_REPO: ${{ secrets.GH_REPO }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          # 1. Configure authentication cleanly
+          git config --global url."https://oauth2:${GH_TOKEN}@github.com/".insteadOf "https://github.com"
+
+          # FIXED: Added the required forward slash right after github.com
+          git remote add github https://github.com/${GH_USER}/${GH_REPO}.git
+
+          # 2. Setup your temporary Git identity
+          git config user.name "Building 404"
+          git config user.email "335763054+building-404@users.noreply.github.com"
+
+          # 3. Create a temporary branch to strip the folder on the fly
+          git checkout -b temp-mirror-branch
+
+          # 4. Completely remove the .gitea directory from this push target
+          git rm -rf .gitea --ignore-unmatch
+          git commit --amend --no-edit --allow-empty
+
+          # 5. Push this clean temporary branch directly into GitHub's master branch
+          git push --force github temp-mirror-branch:master

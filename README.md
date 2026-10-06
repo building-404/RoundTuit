@@ -15,13 +15,15 @@ runtime. It runs in AI tools with filesystem access — no server, VM, or cron r
 
 ## Design Lineage
 
-This project began as **Model Workspace Protocol (MWP)**, before Interpretable Context
-Methodology (ICM) was formalized and its conventions were published. The current
-system later adopted and adapted ICM's folder-as-agent-architecture approach; it is a
-workflow-specific implementation, not a canonical ICM framework. MWP remains the
-project's protocol lineage and the name used for per-project state (`.universal-mwp/`),
-while ICM describes the structural method. The tick protocol, workflow pipelines, and
-preference-learning behavior are this project's extensions around that method.
+ICM is a published way of organizing agent work through folders and staged context,
+first known as **Model Workspace Protocol (MWP)** in [Jake Van Clief and David McDermott's
+research paper](https://arxiv.org/abs/2603.16021).
+
+This project is a workflow-specific implementation of ICM, not a canonical framework.
+MWP remains the project's protocol lineage and the name used for per-project state
+(`.universal-mwp/`), while ICM describes the structural method. The tick protocol,
+workflow pipelines, and preference-learning behavior are this project's extensions
+around that method.
 
 Each chat invocation is one deterministic tick. State persists across sessions via
 local files in each project's `.universal-mwp/` folder.
