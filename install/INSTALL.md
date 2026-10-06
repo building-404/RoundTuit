@@ -27,15 +27,26 @@ at run time, so it is cross-platform.
 1. **REPO_ROOT** — the folder containing this `install/` directory. Confirm it
    contains `universal-ai-context-patterns/`.
 2. **HOME** — the user's home directory, resolved at run time:
+   - macOS/Linux: `$HOME` (e.g. `/Users/<name>`)
    - Windows: `%USERPROFILE%` (e.g. `C:\Users\<name>`)
-   - macOS/Linux: `$HOME`
-3. **ENGINE_HOME** — the shared engine home (plain path):
-   `HOME/.ai-context/universal-ai-context-patterns`
+3. **ENGINE_HOME** — the shared engine home. Use forward slashes on all platforms:
+   - macOS/Linux: `HOME/.ai-context/universal-ai-context-patterns`
+   - Windows: `HOME/.ai-context/universal-ai-context-patterns` (forward slashes)
    Use forward slashes in any `file://` URI regardless of OS.
-4. **ENGINE_URI** — `file://` URI for `ENGINE_HOME`
-   (e.g. `file:///C:/Users/<name>/.ai-context/universal-ai-context-patterns`).
-5. **KIRO_HOME_PATH** / **KIRO_HOME_URI** — `HOME/.kiro` as plain path and `file://`
+4. **MEMORY_HOME** — the universal memory home. Use forward slashes on all platforms:
+   - macOS/Linux: `HOME/.ai-context/memory`
+   - Windows: `HOME/.ai-context/memory` (forward slashes)
+5. **ENGINE_URI** — `file://` URI for `ENGINE_HOME`:
+   - macOS/Linux: `file:///Users/<name>/.ai-context/universal-ai-context-patterns`
+   - Windows: `file:///C:/Users/<name>/.ai-context/universal-ai-context-patterns`
+6. **KIRO_HOME_PATH** / **KIRO_HOME_URI** — `HOME/.kiro` as plain path and `file://`
    URI (used only for Kiro's agent/steering/skills).
+
+> **Path separator rule**: All paths in this document use forward slashes `/`.
+> On Windows, resolve `HOME` from `%USERPROFILE%` and substitute forward slashes
+> for backslashes when constructing paths for file operations and `file://` URIs.
+> Native Windows tools that require backslashes will accept forward slashes in most
+> contexts; use `Path(HOME) / ".ai-context"` style resolution if running Python.
 
 ---
 
@@ -52,9 +63,9 @@ This engine is now shared by every tool below.
 
 ### Step 1b — Initialize universal memory (always)
 
-1. Ensure `~/.ai-context/memory/icm/` exists (create parents as needed)
-2. Ensure `~/.ai-context/memory/icm/archive/` exists
-3. If `~/.ai-context/memory/icm/preferences.db` does not exist, initialize it
+1. Ensure `MEMORY_HOME/icm/` exists (create parents as needed)
+2. Ensure `MEMORY_HOME/icm/archive/` exists
+3. If `MEMORY_HOME/icm/preferences.db` does not exist, initialize it
    with the following tables:
 
    ```sql
@@ -110,7 +121,7 @@ This engine is now shared by every tool below.
    CREATE INDEX idx_decisions_project_task ON decisions(project_path, task_id);
    ```
 
-4. If `~/.ai-context/memory/templates/` does not exist, create it and copy
+4. If `MEMORY_HOME/templates/` does not exist, create it and copy
    `ENGINE_HOME/templates/preferences.local.yaml` into it (if the template exists)
 
 This initializes universal memory. It is safe to re-run — existing data is not

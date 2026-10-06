@@ -2,6 +2,11 @@
 
 Canonical execution rules for the Universal AI Context Patterns system.
 
+> **Path convention**: All paths use forward slashes. `MEMORY_HOME` resolves to
+> `HOME/.ai-context/memory` where `HOME` is the user's home directory
+> (macOS/Linux: `$HOME`, Windows: `%USERPROFILE%`). Use `Path.home()` in Python
+> or the equivalent in other languages — never hardcode `~/` on Windows.
+
 ## Execution Model
 
 Each chat invocation is one **deterministic tick**. State persists across sessions via local files.
@@ -12,7 +17,7 @@ Each chat invocation is one **deterministic tick**. State persists across sessio
    - Load per-project context: `context/active-context.md`, `context/progress.md`
    - Load task queue: `queue/inbox.md`, `queue/approvals.md`
    - Load preference rules from universal memory:
-     `~/.ai-context/memory/icm/preferences.db` (universal rules table)
+     `MEMORY_HOME/icm/preferences.db` (universal rules table)
    - Load project-specific overrides if present:
      `<workspace>/.universal-mwp/preferences.local.yaml`
    - Resolution order: local overrides → project-pattern rules → universal rules → defaults
@@ -23,7 +28,7 @@ Each chat invocation is one **deterministic tick**. State persists across sessio
      such as rule-inline-goahead-is-approval applies)
 4. **Write Phase**: Update state files
 5. **Learn Phase**: Log signals → derive rules in universal memory
-   - Write signal to `~/.ai-context/memory/icm/preferences.db` signals table
+   - Write signal to `MEMORY_HOME/icm/preferences.db` signals table
    - Run rule derivation (see protocol/icm-protocol.md §3)
    - Write decision to decisions table
    - Do NOT write to per-project `icm/preference-signals.json` (deprecated)
@@ -33,11 +38,11 @@ Each chat invocation is one **deterministic tick**. State persists across sessio
 
 On every tick start, before the Read Phase, verify universal memory exists:
 
-1. Check if `~/.ai-context/memory/icm/preferences.db` exists
+1. Check if `MEMORY_HOME/icm/preferences.db` exists
 2. If not, create the directory structure and initialize the database:
-   - Create `~/.ai-context/memory/icm/` and `~/.ai-context/memory/icm/archive/`
+   - Create `MEMORY_HOME/icm/` and `MEMORY_HOME/icm/archive/`
    - Initialize `preferences.db` with the schema defined in `references/universal-memory-spec.md`
-   - Log: "Universal memory initialized at ~/.ai-context/memory/"
+   - Log: "Universal memory initialized at MEMORY_HOME/"
 3. If yes, check if a daily archive is due:
    - Query: `SELECT value FROM meta WHERE key = 'last_archive_at'`
    - If null or more than 24 hours ago, run the archive process (see icm-protocol.md §6)
@@ -81,7 +86,7 @@ Signal logging and rule derivation mechanics are defined canonically in
 Signal → Rule Derivation → Auto-Adjustment
 
 1. On any user decision (approve / reject / correct / standing instruction),
-   INSERT a signal into ~/.ai-context/memory/icm/preferences.db (signals table).
+   INSERT a signal into MEMORY_HOME/icm/preferences.db (signals table).
 2. Derive/update a rule in the universal rules table:
    - persistent correction / guardrail / standing instruction → rule from 1 signal
    - repeated pattern → rule after 3+ consistent signals
@@ -111,5 +116,5 @@ After each tick, output a brief summary:
 | `reviews/` | Archived reviews (YYYYMMDD-HHMMSS-slug.md) |
 | `archived/YYYYMMDD/` | Archived task artifacts |
 | `preferences.local.yaml` | Project-specific preference overrides (optional) |
-| `~/.ai-context/memory/icm/preferences.db` | Universal signals, rules, decisions (SQLite, hot 28-day window) |
-| `~/.ai-context/memory/icm/archive/YYYY-MM.parquet` | Archived signals and decisions (cold, monthly) |
+| `MEMORY_HOME/icm/preferences.db` | Universal signals, rules, decisions (SQLite, hot 28-day window) |
+| `MEMORY_HOME/icm/archive/YYYY-MM.parquet` | Archived signals and decisions (cold, monthly) |

@@ -8,30 +8,29 @@ Copy and follow these steps:
 
 ## Step 1: Read Preference Rules
 
-Read `.universal-mwp/icm/preference-rules.yaml`:
+Query `MEMORY_HOME/icm/preferences.db` for active rules:
 
-```yaml
-# Preference Rules
-
-## Derived Rules
-
-rules:
-  - condition: "{feature + medium}"
-    action: "auto_approve"
-    confidence: 0.85
-
-## Manual Rules
-
-- none | custom rules
-
-## Decision Log
-
-See signals/ for raw decision logs
+```sql
+SELECT rule_id, project_pattern, condition_json, action, confidence,
+       signal_count, last_applied_at
+FROM rules
+WHERE is_active = 1
+ORDER BY confidence DESC;
 ```
+
+Also check `.universal-mwp/preferences.local.yaml` for project-specific overrides.
 
 ## Step 2: Read Recent Signals
 
-Read `.universal-mwp/icm/signals/*.md` for recent signals.
+Query recent signals from universal memory:
+
+```sql
+SELECT task_type, risk_level, action, created_at, context_json
+FROM signals
+WHERE project_path = '<workspace>'
+ORDER BY created_at DESC
+LIMIT 20;
+```
 
 ## Step 3: Format Output
 

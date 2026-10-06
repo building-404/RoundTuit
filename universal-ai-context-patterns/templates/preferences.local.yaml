@@ -3,7 +3,7 @@
 # This file is optional. Place it at <project>/.universal-mwp/preferences.local.yaml
 # to override universal rules for this project only.
 #
-# Local overrides take precedence over all rules in ~/.ai-context/memory/icm/preferences.db
+# Local overrides take precedence over all rules in MEMORY_HOME/icm/preferences.db
 #
 # Resolution order:
 #   1. This file (highest priority)

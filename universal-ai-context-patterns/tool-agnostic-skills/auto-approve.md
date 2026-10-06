@@ -23,7 +23,7 @@ Read `.universal-mwp/queue/approvals.md` for pending tasks.
 For each pending task, determine its `change_scope` and match it against
 `risk_rules`. Select those that resolve to `risk: low`.
 
-Also apply any `confidence >= 0.8` rule in `preference-rules.yaml` that permits
+Also apply any `confidence >= 0.8` rule in the universal rules table that permits
 auto-approval for the task's pattern (e.g. `rule-readonly-review-is-low`).
 
 ## Step 4: Mark Approved
@@ -34,22 +34,21 @@ For each matching task:
 
 ## Step 5: Log Signal (ICM)
 
-Follow `protocol/icm-protocol.md`. Append one signal to
-`.universal-mwp/icm/preference-signals.json` (`signals[]`):
+Follow `protocol/icm-protocol.md`. INSERT one signal into
+`MEMORY_HOME/icm/preferences.db` (signals table):
 
-```json
-{
-  "id": "sig-NNN",
-  "date": "YYYY-MM-DD",
-  "task": "auto-approve batch",
-  "observation": "Auto-approved {N} low-risk task(s): {IDs}.",
-  "signal_type": "approval_granted",
-  "dimensions": { "task_type": "auto-approve", "risk_assigned": "low", "count": {N} }
-}
+```sql
+INSERT INTO signals (project_path, project_name, task_id, task_type,
+  risk_level, action, confidence, context_json)
+VALUES ('<workspace>', '<project>', 'auto-approve-batch', 'auto-approve', 'low',
+  'approved', 1.0,
+  '{"observation": "Auto-approved {N} low-risk task(s): {IDs}.",
+    "signal_type": "approval_granted",
+    "dimensions": {"task_type": "auto-approve", "risk_assigned": "low", "count": {N}}}');
 ```
 
 Then derive/update a rule if 3+ consistent signals now exist for the pattern,
-and record the decision in `icm/decision-log.md`.
+and record the decision in the decisions table.
 
 ## Output
 
@@ -60,6 +59,4 @@ Auto-approved {N} tasks: {IDs}
 ## Files Modified
 
 - `.universal-mwp/queue/approvals.md`
-- `.universal-mwp/icm/preference-signals.json`
-- `.universal-mwp/icm/preference-rules.yaml` (only if a rule was derived/updated)
-- `.universal-mwp/icm/decision-log.md`
+- `MEMORY_HOME/icm/preferences.db` (signals + rules + decisions tables)
