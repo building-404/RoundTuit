@@ -559,5 +559,5 @@ instruction text changes to `tick-contract.md`, `icm-protocol.md`, and `install/
 - [x] Apply install step from `universal-memory-implementation.md` to `install/INSTALL.md`
 - [x] Create `preferences.local.yaml` template
 - [x] Document DuckDB as optional analytics dependency
-- [ ] Test migration on existing projects
+- [x] Test migration on existing projects
 - [ ] Remove per-project `icm/` after validation
