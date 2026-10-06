@@ -1,0 +1,23 @@
+# Normalize line endings to LF on all platforms
+# Prevents Windows CRLF from being committed and causing encoding issues
+
+* text=auto eol=lf
+
+# Explicitly mark text files
+*.md text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+*.py text eol=lf
+*.txt text eol=lf
+*.sh text eol=lf
+
+# Explicitly mark binary files (never touch line endings)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.parquet binary
+*.db binary
+*.db-wal binary
+*.db-shm binary
