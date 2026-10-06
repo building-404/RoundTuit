@@ -18,7 +18,7 @@ are not re-processed. Does not delete them.
 import argparse
 import json
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import yaml
@@ -55,7 +55,11 @@ def migrate_signals(
     with open(signals_path) as f:
         data = json.load(f)
 
-    signals = data.get("signals", [])
+    # Handle both formats: bare list [] or {"signals": [...]}
+    if isinstance(data, list):
+        signals = data
+    else:
+        signals = data.get("signals", [])
     if not signals:
         return 0
 
@@ -73,7 +77,7 @@ def migrate_signals(
         task_type = sig.get("dimensions", {}).get("task_type", "unknown")
         risk_level = sig.get("dimensions", {}).get("risk_assigned", "unknown")
         action = _map_signal_type_to_action(sig.get("signal_type", ""))
-        created_at = sig.get("date", datetime.utcnow().date().isoformat())
+        created_at = sig.get("date", datetime.now(timezone.utc).date().isoformat())
 
         if not dry_run:
             try:

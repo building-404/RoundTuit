@@ -12,7 +12,7 @@ Rules are flagged for review when their source signals have been archived
 
 import argparse
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 DB_PATH = Path.home() / ".ai-context" / "memory" / "icm" / "preferences.db"
@@ -46,7 +46,7 @@ def format_rule(rule: dict, index: int) -> str:
 
 
 def resolve_rule(conn: sqlite3.Connection, rule_id: str, choice: str):
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
 
     if choice == "yes":
         conn.execute(

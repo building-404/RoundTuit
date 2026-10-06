@@ -16,7 +16,7 @@ unless --force is passed.
 import argparse
 import sqlite3
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 MEMORY_DIR = Path.home() / ".ai-context" / "memory" / "icm"
@@ -43,8 +43,8 @@ def is_archive_due(conn: sqlite3.Connection) -> bool:
     ).fetchone()
     if not row or not row[0]:
         return True
-    last = datetime.fromisoformat(row[0])
-    return datetime.utcnow() - last > timedelta(hours=24)
+    last = datetime.fromisoformat(row[0]).replace(tzinfo=timezone.utc)
+    return datetime.now(timezone.utc) - last > timedelta(hours=24)
 
 
 def fetch_expired_signals(conn: sqlite3.Connection) -> list[dict]:
@@ -133,7 +133,7 @@ def flag_rules_for_review(conn: sqlite3.Connection) -> int:
 def update_archive_timestamp(conn: sqlite3.Connection):
     conn.execute(
         "INSERT OR REPLACE INTO meta (key, value) VALUES ('last_archive_at', ?)",
-        (datetime.utcnow().isoformat(),)
+        (datetime.now(timezone.utc).isoformat(),)
     )
 
 
