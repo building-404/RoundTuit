@@ -9,12 +9,12 @@ THIS file so the behavior is defined in one place (DRY).
 > Use forward slashes on all platforms. Use `Path.home()` in Python or equivalent
 > — never hardcode `~/` on Windows.
 
-State lives in universal memory at `~/.ai-context/memory/icm/preferences.db`:
+State lives in universal memory at `MEMORY_HOME/icm/preferences.db`:
 - `signals` table — raw observed signals (rolling 28-day hot window)
 - `rules` table — derived + seed rules (with confidence, permanent until reviewed)
 - `decisions` table — audit trail of rule applications and manual decisions
 
-Cold archive (>28 days) lives in `~/.ai-context/memory/icm/archive/YYYY-MM.parquet`.
+Cold archive (>28 days) lives in `MEMORY_HOME/icm/archive/YYYY-MM.parquet`.
 
 Project-specific overrides (optional, take precedence over universal rules):
 - `<workspace>/.universal-mwp/preferences.local.yaml`
@@ -165,7 +165,7 @@ Run on first tick of each day if `meta.last_archive_at` is older than 24 hours.
 ### Step 1 — Export to Parquet
 
 For each month group of records older than 28 days, append to
-`~/.ai-context/memory/icm/archive/YYYY-MM.parquet`:
+`MEMORY_HOME/icm/archive/YYYY-MM.parquet`:
 
 ```sql
 SELECT 'signals' as tbl, project_path, project_name, task_id, task_type,
@@ -217,7 +217,7 @@ FROM (
   SELECT task_type, risk_level, action FROM signals
   UNION ALL
   SELECT task_type, risk_level, action
-  FROM read_parquet('~/.ai-context/memory/icm/archive/*.parquet')
+  FROM read_parquet('MEMORY_HOME/icm/archive/*.parquet')
   WHERE tbl = 'signals'
 )
 GROUP BY task_type, risk_level;

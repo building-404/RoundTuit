@@ -40,9 +40,10 @@ your-project/
 │   │   ├── inbox.md
 │   │   └── approvals.md
 │   ├── icm/                       # Preference learning
-│   │   ├── preference-signals.json
-│   │   ├── preference-rules.yaml
-│   │   └── decision-log.md
+│   │   ├── preference-signals.json  # Deprecated — migrate to MEMORY_HOME/icm/preferences.db
+│   │   ├── preference-rules.yaml    # Deprecated — migrate to MEMORY_HOME/icm/preferences.db
+│   │   └── decision-log.md          # Deprecated — migrate to MEMORY_HOME/icm/preferences.db
+│   │   # After migration: replace above with preferences.local.yaml (overrides only)
 │   ├── policy/
 │   │   └── local-tick.yaml        # Risk classification config
 │   ├── REQUIREMENTS.md            # What to build

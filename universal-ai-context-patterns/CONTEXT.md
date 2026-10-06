@@ -15,7 +15,7 @@ Entry point for task routing. Read this first, then follow the pointer.
 | Clean code review | `prompts/clean-code-review.md` |
 | Current task status | `.universal-mwp/context/active-context.md` |
 | Pending approvals | `.universal-mwp/queue/approvals.md` |
-| Learned preferences | `.universal-mwp/icm/preference-rules.yaml` |
+| Learned preferences | `MEMORY_HOME/icm/preferences.db` (universal) + `.universal-mwp/preferences.local.yaml` (overrides) |
 | Project conventions | `references/conventions.md` |
 | Rate limiting | `references/rate-limiting.md` |
 | Refactoring patterns | `references/refactoring.md` |
