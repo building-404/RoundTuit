@@ -549,15 +549,15 @@ The universal memory location follows the same principles:
 See [Universal Memory Implementation Changes](universal-memory-implementation.md) for the exact
 instruction text changes to `tick-contract.md`, `icm-protocol.md`, and `install/INSTALL.md`.
 
-- [ ] Create `~/.ai-context/memory/` structure (install + lazy creation on tick)
-- [ ] Implement SQLite schema (including `pending_review`, `is_permanent`, `meta` table)
+- [x] Create `~/.ai-context/memory/` structure (install + lazy creation on tick)
+- [x] Implement SQLite schema (including `pending_review`, `is_permanent`, `meta` table)
 - [ ] Build daily archive process (SQLite → monthly Parquet)
 - [ ] Build rule review flagging logic
 - [ ] Build migration from per-project JSON/YAML to SQLite
-- [ ] Apply instruction changes from `universal-memory-implementation.md` to `tick-contract.md`
-- [ ] Apply instruction changes from `universal-memory-implementation.md` to `icm-protocol.md`
-- [ ] Apply install step from `universal-memory-implementation.md` to `install/INSTALL.md`
-- [ ] Create `preferences.local.yaml` template
-- [ ] Document DuckDB as optional analytics dependency
+- [x] Apply instruction changes from `universal-memory-implementation.md` to `tick-contract.md`
+- [x] Apply instruction changes from `universal-memory-implementation.md` to `icm-protocol.md`
+- [x] Apply install step from `universal-memory-implementation.md` to `install/INSTALL.md`
+- [x] Create `preferences.local.yaml` template
+- [x] Document DuckDB as optional analytics dependency
 - [ ] Test migration on existing projects
 - [ ] Remove per-project `icm/` after validation

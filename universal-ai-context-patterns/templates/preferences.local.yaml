@@ -1,0 +1,37 @@
+# Project-Specific Preference Overrides
+#
+# This file is optional. Place it at <project>/.universal-mwp/preferences.local.yaml
+# to override universal rules for this project only.
+#
+# Local overrides take precedence over all rules in ~/.ai-context/memory/icm/preferences.db
+#
+# Resolution order:
+#   1. This file (highest priority)
+#   2. Project-pattern rules in universal DB
+#   3. Universal rules in universal DB
+#   4. Built-in defaults (lowest priority)
+
+overrides: []
+
+  # Examples:
+  #
+  # Disable a universal rule for this project:
+  # - rule_id: auto-approve-medium-features
+  #   action: disable
+  #   reason: "Enterprise compliance requires all changes reviewed"
+  #
+  # Add a project-specific rule:
+  # - condition:
+  #     task_type: feature
+  #     risk_level: low
+  #   action: auto_approve
+  #   reason: "Personal project, auto-approve low-risk features"
+
+project_context: {}
+
+  # Optional metadata used for project-pattern rule matching.
+  # Examples:
+  #
+  # type: enterprise_dotnet
+  # compliance: soc2
+  # team_size: 5
